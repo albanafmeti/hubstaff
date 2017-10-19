@@ -1,4 +1,4 @@
-This is a rest client package for Laravel that you can use to communicate with Hubstaff REST API.
+Rest API client package for Laravel that you can use to consume Hubstaff REST API.
 
 ## How to use
 
