@@ -1,4 +1,4 @@
-Rest API client package for Laravel that you can use to consume Hubstaff REST API.
+Rest client package for Laravel that you can use to consume Hubstaff REST API.
 
 ## How to use
 
