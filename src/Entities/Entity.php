@@ -18,9 +18,10 @@ class Entity
         $this->admin_login();
     }
 
-    protected function api_url($path)
+    protected function api_url($path, $queryParams = [])
     {
-        return rtrim($this->api_url, "/") . "/" . ltrim($path, "/");
+        $path = rtrim($this->api_url, "/") . "/" . ltrim($path, "/");
+        return $path . "?" . http_build_query($queryParams);
     }
 
     protected function add_request_headers($headers)
@@ -35,32 +36,36 @@ class Entity
 
     private function admin_login()
     {
-        $session = new Session();
-        if ($session->get('App-Token') && $session->get('Auth-Token')) {
-            $this->add_request_headers([
-                'App-Token' => $session->get('App-Token'),
-                'Auth-Token' => $session->get('Auth-Token'),
-            ]);
-            return true;
-        }
-
         $this->add_request_headers([
             'App-Token' => config("hubstaff.app_token")
         ]);
 
-        $response = $this->request()->post($this->api_url("auth"))
-            ->body([
-                'email' => config("hubstaff.admin_email"),
-                'password' => config("hubstaff.admin_password")
-            ])->send();
+        if (config("hubstaff.admin_email") && config("hubstaff.admin_password")) {
 
-        $body = $this->handle_response($response, new UserActionException());
-        $this->add_request_headers([
-            'App-Token' => config("hubstaff.app_token"),
-            'Auth-Token' => $body->auth_token
-        ]);
-        $session->set('Auth-Token', $body->auth_token);
-        return true;
+            $session = new Session();
+            if ($session->get('Auth-Token')) {
+                $this->add_request_headers([
+                    'Auth-Token' => $session->get('Auth-Token'),
+                ]);
+                return true;
+            }
+
+            $response = $this->request()->post($this->api_url("auth"))
+                ->body([
+                    'email' => config("hubstaff.admin_email"),
+                    'password' => config("hubstaff.admin_password")
+                ])->send();
+
+            $user = $this->handle_response($response, new UserActionException(), ['user']);
+
+            $this->add_request_headers([
+                'App-Token' => config("hubstaff.app_token"),
+                'Auth-Token' => $user->auth_token
+            ]);
+            $session->set('Auth-Token', $user->auth_token);
+            return true;
+        }
+        return false;
     }
 
     public function handle_response($response, $exception, $fields = [])
@@ -87,7 +92,9 @@ class Entity
 
     private function data($body, $fields)
     {
-        if (count($fields) == 1) {
+        if (count($fields) == 0) {
+            return $body;
+        } else if (count($fields) == 1) {
             return isset($body->{$fields[0]}) ? $body->{$fields[0]} : $body;
         } else if (count($fields) == 2) {
             $stepOne = isset($body->{$fields[0]}) ? $body->{$fields[0]} : $body;
@@ -99,5 +106,6 @@ class Entity
             $stepThree = isset($stepTwo->{$fields[2]}) ? $stepTwo->{$fields[2]} : $stepTwo;
             return $stepThree;
         }
+        return $body;
     }
 }

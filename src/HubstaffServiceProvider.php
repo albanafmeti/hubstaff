@@ -25,6 +25,9 @@ class HubstaffServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // $this->app->bind("rocket-chat", \Noisim\RocketChat\Entities\RocketChat::class);
+        $this->app->bind("hubstaff", \Noisim\Hubstaff\Entities\Hubstaff::class);
+        $this->app->bind("hs-user", \Noisim\Hubstaff\Entities\User::class);
+        $this->app->bind("hs-organization", \Noisim\Hubstaff\Entities\Organization::class);
+        $this->app->bind("hs-project", \Noisim\Hubstaff\Entities\Project::class);
     }
 }
